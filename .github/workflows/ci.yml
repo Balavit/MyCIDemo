@@ -20,7 +20,6 @@ jobs:
           java-version: '17'
       - run: mvn -f user-service/pom.xml clean package
       - run: docker build -t user-service:latest ./user-service
-      
 
   build-order-service:
     if: contains(join(fromJson(toJson(github.event.commits)).*.modified, ''), 'order-service/')
