@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Debug - print modified files
-        run: echo "Modified files: ${{ toJson(github.event.commits.*.modified) }}"
+      - run: echo "Modified files: ${{ toJson(github.event.commits.*.modified) }}"
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
