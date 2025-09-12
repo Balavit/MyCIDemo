@@ -21,7 +21,7 @@ jobs:
           echo "User-service condition result: ${{ contains(join(fromJson(toJson(github.event.commits)).*.modified, ''), 'user-service/') }}"
           echo "Order-service condition result: ${{ contains(join(fromJson(toJson(github.event.commits)).*.modified, ''), 'order-service/') }}"
 
-          echo "user-service-condition=${{ contains(join(fromJson(toJson(github.event.commits)).*.modified, '/user-service'), 'user-service/') }}" >> $GITHUB_OUTPUT
+          echo "user-service-condition=${{ contains(join(fromJson(toJson(github.event.commits)).*.modified, ''), 'user-service/') }}" >> $GITHUB_OUTPUT
           echo "order-service-condition=${{ contains(join(fromJson(toJson(github.event.commits)).*.modified, ''), 'order-service/') }}" >> $GITHUB_OUTPUT
 
   build-user-service:
