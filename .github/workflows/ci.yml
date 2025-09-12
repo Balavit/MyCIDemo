@@ -7,26 +7,41 @@ on:
     branches: [ "main" ]
 
 jobs:
+  debug-commits:
+    runs-on: ubuntu-latest
+    outputs:
+      user-service-condition: ${{ steps.check.outputs.user-service-condition }}
+      order-service-condition: ${{ steps.check.outputs.order-service-condition }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Debug - print modified files and evaluate condition
+        id: check
+        run: |
+          echo "Modified files: ${{ toJson(github.event.commits.*.modified) }}"
+          echo "User-service condition result: ${{ contains(join(fromJson(toJson(github.event.commits)).*.modified, ''), 'user-service/') }}"
+          echo "Order-service condition result: ${{ contains(join(fromJson(toJson(github.event.commits)).*.modified, ''), 'order-service/') }}"
+
+          echo "user-service-condition=${{ contains(join(fromJson(toJson(github.event.commits)).*.modified, ''), 'user-service/') }}" >> $GITHUB_OUTPUT
+          echo "order-service-condition=${{ contains(join(fromJson(toJson(github.event.commits)).*.modified, ''), 'order-service/') }}" >> $GITHUB_OUTPUT
+
   build-user-service:
-    if: "contains(join(fromJson(toJson(github.event.commits)).*.modified, ''), 'user-service/')"
+    needs: debug-commits
+    if: needs.debug-commits.outputs.user-service-condition == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Debug - print modified files
-        run: |
-          echo "Event payload (debug): ${{ toJson(github.event) }}"
-          echo "Modified files: ${{ toJson(github.event.commits.*.modified) }}"
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-      - name: Build User Service
-        run: mvn -f user-service/pom.xml clean package
-      - name: Build User Docker Image
-        run: docker build -t user-service:latest ./user-service
+      - run: mvn -f user-service/pom.xml clean package
+      - run: docker build -t user-service:latest ./user-service
 
   build-order-service:
-    if: "contains(join(fromJson(toJson(github.event.commits)).*.modified, ''), 'order-service/')"
+    needs: debug-commits
+    if: needs.debug-commits.outputs.order-service-condition == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,7 +49,5 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      - name: Build Order Service
-        run: mvn -f order-service/pom.xml clean package
-      - name: Build Order Docker Image
-        run: docker build -t order-service:latest ./order-service
+      - run: mvn -f order-service/pom.xml clean package
+      - run: docker build -t order-service:latest ./order-service
