@@ -10,6 +10,6 @@ import java.util.Map;
 public class UserserviceController {
   @GetMapping("/users")
   public List<Map<String, Object>> list() {
-    return List.of(Map.of("id", 1, "name", "Alice"), Map.of("id", 2, "name", "Bob"), Map.of("id", 3, "name", "k"));
+    return List.of(Map.of("id", 1, "name", "Alice"), Map.of("id", 2, "name", "Bob"), Map.of("id", 3, "name", "ok"));
   }
 }
