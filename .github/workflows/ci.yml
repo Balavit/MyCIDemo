@@ -3,9 +3,9 @@ name: CI Pipeline
 on:
   push:
     branches: [ "main" ]
-  
+
 jobs:
-  debug-commits:
+  detect-changes:
     runs-on: ubuntu-latest
     outputs:
       user-service-condition: ${{ steps.check.outputs.user-service-condition }}
@@ -13,20 +13,36 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # needed to compare commits
 
-      - name: Debug - print modified files and evaluate condition
+      - name: Get changed files
+        id: diff
+        run: |
+          echo "Comparing ${{ github.event.before }} -> ${{ github.sha }}"
+          git fetch origin ${{ github.event.before }} --depth=1 || true
+          git diff --name-only ${{ github.event.before }} ${{ github.sha }} > files.txt
+          echo "Changed files:"
+          cat files.txt
+
+      - name: Evaluate service changes
         id: check
         run: |
-          echo "Modified files: ${{ toJson(github.event.commits.*.modified) }}"
-          echo "User-service condition result: ${{ contains(join(fromJson(toJson(github.event.commits)).*.modified, ''), 'user-service/') }}"
-          echo "Order-service condition result: ${{ contains(join(fromJson(toJson(github.event.commits)).*.modified, ''), 'order-service/') }}"
+          if grep -q "^user-service/" files.txt; then
+            echo "user-service-condition=true" >> $GITHUB_OUTPUT
+          else
+            echo "user-service-condition=false" >> $GITHUB_OUTPUT
+          fi
 
-          echo "user-service-condition=${{ contains(join(fromJson(toJson(github.event.commits)).*.modified, ''), 'user-service/') }}" >> $GITHUB_OUTPUT
-          echo "order-service-condition=${{ contains(join(fromJson(toJson(github.event.commits)).*.modified, ''), 'order-service/') }}" >> $GITHUB_OUTPUT
+          if grep -q "^order-service/" files.txt; then
+            echo "order-service-condition=true" >> $GITHUB_OUTPUT
+          else
+            echo "order-service-condition=false" >> $GITHUB_OUTPUT
+          fi
 
   build-user-service:
-    needs: debug-commits
-    if: needs.debug-commits.outputs.user-service-condition == 'true'
+    needs: detect-changes
+    if: needs.detect-changes.outputs.user-service-condition == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,9 +53,17 @@ jobs:
       - run: mvn -f user-service/pom.xml clean package
       - run: docker build -t user-service:latest ./user-service
 
+      - name: Restart user-service container
+        run: |
+          # Stop and remove old container if running
+          docker ps -q --filter "name=user-service" | grep -q . && docker stop user-service && docker rm user-service || true
+
+          # Start new container
+          docker run -d --name user-service -p 8081:8080 user-service:latest
+
   build-order-service:
-    needs: debug-commits
-    if: needs.debug-commits.outputs.order-service-condition == 'true'
+    needs: detect-changes
+    if: needs.detect-changes.outputs.order-service-condition == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,3 +73,11 @@ jobs:
           java-version: '17'
       - run: mvn -f order-service/pom.xml clean package
       - run: docker build -t order-service:latest ./order-service
+
+      - name: Restart order-service container
+        run: |
+          # Stop and remove old container if running
+          docker ps -q --filter "name=order-service" | grep -q . && docker stop order-service && docker rm order-service || true
+
+          # Start new container
+          docker run -d --name order-service -p 8082:8080 order-service:latest
