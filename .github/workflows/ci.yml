@@ -53,8 +53,8 @@ jobs:
 
       - name: Stop old containers and rebuild user-service
         run: |
-          docker-compose down
-          docker-compose up -d --build user-service
+          docker compose down
+          docker compose up -d --build user-service
 
   build-order-service:
     needs: detect-changes
@@ -69,5 +69,5 @@ jobs:
 
       - name: Stop old containers and rebuild order-service
         run: |
-          docker-compose down
-          docker-compose up -d --build order-service
+          docker compose down
+          docker compose up -d --build order-service
