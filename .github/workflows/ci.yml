@@ -14,7 +14,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # needed to compare commits
+          fetch-depth: 0
 
       - name: Get changed files
         id: diff
@@ -50,16 +50,11 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      - run: mvn -f user-service/pom.xml clean package
-      - run: docker build -t user-service:latest ./user-service
 
-      - name: Restart user-service container
+      - name: Stop old containers and rebuild user-service
         run: |
-          # Stop and remove old container if running
-          docker ps -q --filter "name=user-service" | grep -q . && docker stop user-service && docker rm user-service || true
-
-          # Start new container
-          docker run -d --name user-service -p 8081:8080 user-service:latest
+          docker-compose down
+          docker-compose up -d --build user-service
 
   build-order-service:
     needs: detect-changes
@@ -71,13 +66,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      - run: mvn -f order-service/pom.xml clean package
-      - run: docker build -t order-service:latest ./order-service
 
-      - name: Restart order-service container
+      - name: Stop old containers and rebuild order-service
         run: |
-          # Stop and remove old container if running
-          docker ps -q --filter "name=order-service" | grep -q . && docker stop order-service && docker rm order-service || true
-
-          # Start new container
-          docker run -d --name order-service -p 8082:8080 order-service:latest
+          docker-compose down
+          docker-compose up -d --build order-service
