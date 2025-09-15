@@ -51,6 +51,9 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Build JAR for user-service
+        run: mvn -f user-service/pom.xml clean package -DskipTests
+
       - name: Stop old containers and rebuild user-service
         run: |
           docker compose down
@@ -66,6 +69,9 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
+
+      - name: Build JAR for order-service
+        run: mvn -f order-service/pom.xml clean package -DskipTests
 
       - name: Stop old containers and rebuild order-service
         run: |
