@@ -10,6 +10,6 @@ import java.util.Map;
 public class OrderserviceController {
   @GetMapping("/orders")
   public List<Map<String, Object>> list() {
-    return List.of(Map.of("id", 101, "item", "Widget", "qty", 2), Map.of("id", 102, "item", "Gadget", "qty", 1));
+    return List.of(Map.of("id", 101, "item", "Widget", "qty", 3), Map.of("id", 102, "item", "Gadget", "qty", 1));
   }
 }
